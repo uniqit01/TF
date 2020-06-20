@@ -1,0 +1,4 @@
+resource "openstack_compute_keypair_v2" "spetrovk-keypair" {
+  name       = "spetrovk-keypair"
+  public_key = " ssh-rsa AAAAB3NzaC1yc2EAAAABJQAAAQEAtrbzOXTGf8a+UYEoUaxGvQcvHAfVwSx+ZMtJGb14Bi8W0kaeBMhDztr7t8oD18UMz7KSXuoL+1XfDHgsqSnwiUsyWTJ5BPuWhupxEMHIDvS2ZLfUjpGqxGJFECPWew6TecgscDo1TpOVmsvkY90F6pDuHGBhXGSRvZEF0aKDWRGxVf0V0XUksqZOJFsainHzTA8FSWOLXdduuCIiHmcEVkXydPXOxatynzcqkTUH9KujDzZdD6ZZQZs1ImYBSleSfVZ8YV/hqMDl0NPA+Ee0fBUkAOt0UOytFAMLp/tmvwPoo0HOzvMKEmnQc295fC2wTWWEoXcrpOcNFRznPAM2IQ=="
+}

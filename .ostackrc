@@ -1,0 +1,75 @@
+# Source this file to set the OTC OpenStack Config
+echo ${BASH_SOURCE[0]} >/dev/null
+ME=$_
+#
+# You need to configure these 3 settings: OS_USERNAME, OS_USER_DOMAIN_NAME, OS_PASSWORD
+# This is the format used for ICU (MyWorkplace) users:
+export OS_USERNAME="14XXXXXX OTC-EU-DE-0000000000100XXXXXXX"
+# Then set DOMAIN by stripping off user number ...
+export OS_USER_DOMAIN_NAME="${OS_USERNAME##* }"
+# For IAM users, you will have a normal username -- DOMAIN then needs to be set
+#export OS_USER_DOMAIN_NAME=OTC-EU-DE-0000000000100XXXXXX
+# Your IAMv2 password (or Generated API key) -- keep this file private (chmod 0600)!
+export OS_PASSWORD=PasswordOrGeneratedAPIKEY
+#
+# Only change these for a different region:
+export _OS_REGION_NAME=eu-de
+# (Not recommended to set OS_REGION_NAME..., see below)
+#export OS_REGION_NAME=$_OS_REGION_NAME
+# (Secondary projects would be ${_OS_REGION_NAME}_name, e.g. eu-de_Project2)
+export OS_PROJECT_NAME=$_OS_REGION_NAME
+export OS_TENANT_NAME=$OS_PROJECT_NAME
+export OS_AUTH_URL=https://iam.$_OS_REGION_NAME.otc.t-systems.com:443/v3
+#
+# No changes needed beyond this point
+#
+# Do not set OS_CACERT, OTC uses a well known CA (TeleSec)
+#unset OS_CACERT
+#
+# openstack keystone calls (role,user,domain,project,...) need a domain scoped
+# token and use the public endpoint. We can only set the latter unconditionally.
+# (If you set OS_REGION_NAME above, you'd need to pass --os-region-name "*" as well ...)
+export OS_INTERFACE=public
+#export OS_PROJECT_NAME=""
+#export OS_DOMAIN_NAME=$OS_USER_DOMAIN_NAME
+# User openstack_dom for domain administration tasks (user/project management)
+alias openstack_dom='openstack --os-project-name "" --os-domain-name "$OS_USER_DOMAIN_NAME" --os-region-name "*"'
+#
+# Override default versions in (old) tools:
+export OS_VOLUME_API_VERSION=2
+export OS_IDENTITY_API_VERSION=3
+export OS_IMAGE_API_VERSION=2
+# These are no longer needed:
+#export NOVA_ENDPOINT_TYPE=publicURL
+#export OS_ENDPOINT_TYPE=publicURL
+#export CINDER_ENDPOINT_TYPE=publicURL
+#
+# Optional parts:
+# Warn for too open permissions
+if test -n "$ME" -a -r "$ME"; then
+  PERM=$(stat -Lc "%a" "$ME")
+  if test "${PERM:2:1}" != "0"; then
+    echo "Warning: $ME permissions too open ($PERM)" 1>&2
+  fi
+  unset ME
+fi
+# Set S3 credentials from ~/credentials.csv as offered from WebInterface for download
+# Only if it exists and not set already
+if test -z "$S3_ACCESS_KEY_ID" -a -r ~/credentials.csv; then
+  PERM=$(stat -Lc "%a" ~/credentials.csv)
+  if test "${PERM:2:1}" != "0"; then
+    echo "Warning: ~/credentials.csv permissions too open ($PERM)" 1>&2
+  fi
+  CRED=`cat ~/credentials.csv | grep "$OS_USERNAME" | tr -d '"'`
+  if test -z "$CRED"; then CRED=`cat ~/credentials.csv | tail -n1 | tr -d '"'`; fi
+  CRED_USR=${CRED%%,*}
+  if test "$CRED_USR" != "$OS_USERNAME"; then
+    echo "Warning: OpenStack Env set for \"$OS_USERNAME\"; not configuring ObjStorage for \"$CRED_USR\"" 1>&2
+  else
+    CRED=${CRED#*,}
+    export S3_HOSTNAME=obs.${_OS_REGION_NAME}.otc.t-systems.com
+    export S3_ACCESS_KEY_ID=${CRED%,*}
+    export S3_SECRET_ACCESS_KEY=${CRED#*,}
+  fi
+fi
+
